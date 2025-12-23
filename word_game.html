@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vocab Striker: Queue Protocol</title>
+    <title>Vocab Striker: Configurable Queue</title>
     <style>
         :root {
             --space-bg: #020617;
@@ -36,6 +36,8 @@
             pointer-events: none; z-index: 20;
         }
 
+        .stat-group { display: flex; flex-direction: column; gap: 8px; pointer-events: auto; }
+
         .stat-box {
             background: rgba(15, 23, 42, 0.9);
             backdrop-filter: blur(10px);
@@ -45,8 +47,9 @@
             font-size: 0.85rem;
             font-weight: bold;
             display: flex; align-items: center; gap: 10px;
-            pointer-events: auto;
         }
+
+        input[type=range] { cursor: pointer; accent-color: var(--neon-blue); width: 80px; }
 
         #play-area {
             flex-grow: 1;
@@ -69,6 +72,7 @@
             z-index: 2;
             width: 140px;
             text-align: center;
+            box-sizing: border-box;
         }
 
         .laser {
@@ -113,6 +117,9 @@
             position: relative;
         }
 
+        .def-btn.waiting { opacity: 0.4; }
+        .def-btn.active { border-color: var(--neon-purple); opacity: 1; }
+
         .def-btn:hover {
             border-color: var(--neon-blue);
             background: rgba(56, 189, 248, 0.1);
@@ -121,11 +128,10 @@
 
         .btn-label {
             position: absolute;
-            top: 2px; right: 5px;
+            top: 2px; left: 5px;
             font-size: 0.6rem;
-            color: var(--neon-purple);
+            color: var(--neon-blue);
             text-transform: uppercase;
-            font-weight: bold;
         }
 
         .overlay {
@@ -160,6 +166,12 @@
             <div class="stat-box">
                 Speed: 
                 <input type="range" id="speed-slider" min="0.3" max="2.0" step="0.1" value="0.7">
+                <span id="speed-val">0.7</span>
+            </div>
+            <div class="stat-box">
+                Max Drop: 
+                <input type="range" id="limit-slider" min="1" max="4" step="1" value="1">
+                <span id="limit-val">1</span>
             </div>
         </div>
     </div>
@@ -171,21 +183,21 @@
     </div>
 
     <div id="controls">
-        <button class="def-btn" id="btn-0"><span class="btn-label">Slot 1</span><span class="text"></span></button>
-        <button class="def-btn" id="btn-1"><span class="btn-label">Slot 2</span><span class="text"></span></button>
-        <button class="def-btn" id="btn-2"><span class="btn-label">Slot 3</span><span class="text"></span></button>
-        <button class="def-btn" id="btn-3"><span class="btn-label">Slot 4</span><span class="text"></span></button>
+        <button class="def-btn waiting" id="btn-0"><span class="btn-label">Slot 1</span><span class="text">---</span></button>
+        <button class="def-btn waiting" id="btn-1"><span class="btn-label">Slot 2</span><span class="text">---</span></button>
+        <button class="def-btn waiting" id="btn-2"><span class="btn-label">Slot 3</span><span class="text">---</span></button>
+        <button class="def-btn waiting" id="btn-3"><span class="btn-label">Slot 4</span><span class="text">---</span></button>
     </div>
 
     <div id="start-screen" class="overlay">
         <h1 style="color: var(--neon-blue); font-size: 3rem; margin:0;">VOCAB STRIKER</h1>
-        <p style="color: var(--neon-purple); letter-spacing: 5px; font-weight: bold;">QUEUE-SYNC PROTOCOL</p>
+        <p style="color: var(--neon-purple); letter-spacing: 5px; font-weight: bold;">ADJUSTABLE QUEUE</p>
         <div style="color: #94a3b8; max-width: 500px; text-align: left; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 10px; margin-top: 20px;">
-            • Definitions at the bottom represent the <strong>next 4 words</strong> in the queue.<br>
-            • Words drop one by one. Correct hits restore <strong>+5% Health</strong>.<br>
-            • If you shoot a word, its definition slot is filled by the <strong>next incoming word</strong>.
+            • Use the <strong>Max Drop</strong> slider to set how many words fall at once.<br>
+            • Buttons 1-4 show definitions for active words and the ones next in line.<br>
+            • Correct shots restore <strong>+5% Health</strong>.
         </div>
-        <button class="main-btn" onclick="startGame()">Start Game</button>
+        <button class="main-btn" onclick="startGame()">Initiate</button>
     </div>
 
     <div id="game-over-screen" class="overlay hidden">
@@ -526,7 +538,7 @@ denounce,to criticize publicly,
 deplore,"to feel or express sorrow, disapproval",
 depravity,wickedness,
 deprecate,"to belittle, depreciate",
-dererlict,"abandoned, run-down",
+derelict,"abandoned, run-down",
 deride,"to laught at mockingly, scorn",
 derivative,"taken directly from a source, unoriginal",
 desecrate,to violate the sacredness of thing or place,
@@ -913,7 +925,7 @@ paragon,a model of excellence or perfection,
 paramount,"greatest in importance, rank, character",
 pariah,an outcast,
 parody,a satirical imitation,
-parsimony,"frugality, stringiness",
+parsimony,"frugality, stinginess",
 partisan,"a follower, adherent",
 patent,"readily seen or understood, clear",
 pathology,a deviation from the normal,
@@ -1173,7 +1185,7 @@ vitriolic,having a caustic quality,
 vituperate,to berate,
 vivacious,"lively, sprightly",
 vocation,"the work in which someone is employed, profession",
-vociferous,"loud, boisterous",
+vociferous,"loud, boilerous",
 wallow,to roll oneself indolently; to become or remain helplessness,
 wane,"to decrease in size, dwindle",
 wanton,"undisciplined, lewd, lustful",
@@ -1188,7 +1200,7 @@ zealous,"fervent, filled with eagerness in pursuit of something",
 zenith,"the highest point, culminating point",
 zephyr,a gentle breeze`;
 
-    // 1. Setup Data
+    // Data Parsing
     const fullList = rawData.split('\n').map(line => {
         const parts = line.split(/,(.+)/);
         if(!parts[0] || !parts[1]) return null;
@@ -1198,83 +1210,99 @@ zephyr,a gentle breeze`;
         };
     }).filter(x => x !== null);
 
-    // 2. Game State
-    let masterQueue = []; // Shuffled deck
-    let displayWindow = []; // The 4 words currently assigned to buttons [ {word, def, isDropped, invaderObj} ]
+    // State
     let score = 0;
     let health = 100;
     let gameActive = false;
     let speed = 0.7;
+    let maxOnScreen = 1;
     let lastSpawnTime = 0;
-    const spawnInterval = 2500; // Time between sequential drops
+    const spawnDelay = 2000;
+
+    // The 4 slots (Lanes)
+    // windowQueue[i] contains the word data for button i
+    let windowQueue = [null, null, null, null];
+    let masterQueue = [];
 
     const playArea = document.getElementById('play-area');
     const ship = document.getElementById('ship');
     const scoreEl = document.getElementById('score');
     const healthEl = document.getElementById('health');
     const speedSlider = document.getElementById('speed-slider');
+    const limitSlider = document.getElementById('limit-slider');
 
-    speedSlider.oninput = (e) => { 
-        speed = parseFloat(e.target.value); 
-    };
+    // UI Listeners
+    speedSlider.oninput = (e) => { speed = parseFloat(e.target.value); document.getElementById('speed-val').innerText = speed.toFixed(1); };
+    limitSlider.oninput = (e) => { maxOnScreen = parseInt(e.target.value); document.getElementById('limit-val').innerText = maxOnScreen; };
 
-    // 3. Logic: Window & Button Management
-    function fillWindow() {
-        // Ensure displayWindow has 4 items
-        while(displayWindow.length < 4 && masterQueue.length > 0) {
-            const nextItem = masterQueue.shift();
-            displayWindow.push({
-                ...nextItem,
-                isDropped: false,
-                invader: null,
-                buttonSlot: displayWindow.length // Tracks which button id it belongs to
-            });
+    // Fill the 4-slot window from the shuffled deck
+    function refreshWindow() {
+        for (let i = 0; i < 4; i++) {
+            if (windowQueue[i] === null && masterQueue.length > 0) {
+                const next = masterQueue.shift();
+                windowQueue[i] = { ...next, isDropped: false, invader: null };
+            }
+            updateButtonUI(i);
         }
-        updateButtons();
     }
 
-    function updateButtons() {
-        displayWindow.forEach((item, i) => {
-            const btn = document.getElementById(`btn-${i}`);
-            btn.querySelector('.text').innerText = item.def;
-            btn.onclick = () => checkShot(i);
-        });
+    function updateButtonUI(index) {
+        const btn = document.getElementById(`btn-${index}`);
+        const data = windowQueue[index];
+        if (data) {
+            btn.querySelector('.text').innerText = data.def;
+            btn.classList.remove('waiting');
+            if (data.isDropped) btn.classList.add('active');
+            else btn.classList.remove('active');
+            btn.onclick = () => checkShot(index);
+        } else {
+            btn.querySelector('.text').innerText = "---";
+            btn.classList.add('waiting');
+            btn.onclick = null;
+        }
     }
 
-    // 4. Logic: Sequential Dropping
+    // Drop words one-by-one based on the user-defined limit
     function spawnNext(time) {
         if (!gameActive) return;
-        if (time - lastSpawnTime < spawnInterval) return;
+        if (time - lastSpawnTime < spawnDelay) return;
 
-        // Find the next word in the window that hasn't dropped yet
-        const nextToDrop = displayWindow.find(item => !item.isDropped);
-        if (!nextToDrop) return;
+        // How many are currently falling?
+        const currentFalling = windowQueue.filter(item => item && item.isDropped).length;
+        if (currentFalling >= maxOnScreen) return;
 
+        // Find the first word in the window that is ready to drop
+        const nextSlotIndex = windowQueue.findIndex(item => item && !item.isDropped);
+        if (nextSlotIndex === -1) return;
+
+        const target = windowQueue[nextSlotIndex];
         const el = document.createElement('div');
         el.className = 'invader';
-        el.innerText = nextToDrop.word;
+        el.innerText = target.word;
         playArea.appendChild(el);
-        
-        const xPos = Math.random() * (playArea.clientWidth - 150);
+
+        // Lane positioning
+        const laneWidth = playArea.clientWidth / 4;
+        const xPos = (nextSlotIndex * laneWidth) + (laneWidth / 2) - 70;
         el.style.left = xPos + 'px';
         el.style.top = '-60px';
-        
-        nextToDrop.isDropped = true;
-        nextToDrop.invader = { el, y: -60, x: xPos };
+
+        target.isDropped = true;
+        target.invader = { el, y: -60, x: xPos };
         
         lastSpawnTime = time;
+        updateButtonUI(nextSlotIndex);
     }
 
-    // 5. Logic: Combat
-    function checkShot(windowIndex) {
-        if (!gameActive) return;
-        const target = displayWindow[windowIndex];
-        
-        // Match only if the word is already falling
-        if (!target || !target.invader) {
-            // Miss penalty for shooting a "queued" but not yet "dropped" definition
-            health = Math.max(0, health - 5);
-            healthEl.innerText = health;
+    function checkShot(index) {
+        const target = windowQueue[index];
+        if (!target || !target.isDropped || !gameActive) {
+            // Penalty for clicking a definition that isn't on screen yet
+            if (gameActive) {
+                health = Math.max(0, health - 5);
+                healthEl.innerText = health;
+                if (health <= 0) endGame();
+            }
             return;
         }
 
@@ -1295,9 +1323,9 @@ zephyr,a gentle breeze`;
             laser.remove();
             if (inv.el) inv.el.remove();
             
-            // Remove from window and slide new one in
-            displayWindow.splice(windowIndex, 1);
-            fillWindow(); 
+            // Clear slot and slide a new word into this lane's queue slot
+            windowQueue[index] = null;
+            refreshWindow();
 
             score += 10;
             scoreEl.innerText = score;
@@ -1306,37 +1334,36 @@ zephyr,a gentle breeze`;
         }, 100);
     }
 
-    // 6. Game Loop
     function update(time) {
         if (!gameActive) return;
 
         spawnNext(time);
 
-        displayWindow.forEach((item, index) => {
-            if (item.invader) {
+        windowQueue.forEach((item, index) => {
+            if (item && item.isDropped) {
                 const inv = item.invader;
                 inv.y += speed;
                 inv.el.style.top = inv.y + 'px';
 
-                // Hit Bottom
                 if (inv.y > playArea.clientHeight - 40) {
                     inv.el.remove();
-                    displayWindow.splice(index, 1);
-                    fillWindow();
+                    windowQueue[index] = null;
+                    refreshWindow();
                     
                     health = Math.max(0, health - 20);
                     healthEl.innerText = health;
-
-                    if (health <= 0) {
-                        gameActive = false;
-                        document.getElementById('game-over-screen').classList.remove('hidden');
-                        document.getElementById('final-score').innerText = `Final Score: ${score}`;
-                    }
+                    if (health <= 0) endGame();
                 }
             }
         });
 
         requestAnimationFrame(update);
+    }
+
+    function endGame() {
+        gameActive = false;
+        document.getElementById('game-over-screen').classList.remove('hidden');
+        document.getElementById('final-score').innerText = `Final Score: ${score}`;
     }
 
     function startGame() {
@@ -1345,8 +1372,8 @@ zephyr,a gentle breeze`;
         playArea.querySelectorAll('.invader').forEach(i => i.remove());
         
         masterQueue = [...fullList].sort(() => Math.random() - 0.5);
-        displayWindow = [];
-        fillWindow();
+        windowQueue = [null, null, null, null];
+        refreshWindow();
         
         lastSpawnTime = 0;
         gameActive = true;
