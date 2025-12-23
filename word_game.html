@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vocab Striker: Tactical Edition</title>
+    <title>Vocab Striker: Ghost Protocol</title>
     <style>
         :root {
             --space-bg: #020617;
@@ -11,8 +11,8 @@
             --neon-purple: #a855f7;
             --neon-green: #22c55e;
             --neon-red: #ef4444;
-            --glass: rgba(255, 255, 255, 0.08);
             --header-h: 80px;
+            --footer-h: 220px;
         }
 
         body, html {
@@ -24,66 +24,55 @@
             color: white;
         }
 
-        #game-container {
-            position: relative;
-            width: 100vw; height: 100vh;
-            display: flex; flex-direction: column;
-        }
-
-        /* --- Non-Obstructive Header --- */
-        #header-ui {
+        /* --- Header UI --- */
+        #ui-header {
             height: var(--header-h);
-            background: rgba(15, 23, 42, 0.95);
+            background: rgba(15, 23, 42, 0.98);
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
-            justify-content: space-around;
+            justify-content: space-between;
             align-items: center;
             padding: 0 20px;
-            z-index: 50;
+            z-index: 100;
+            position: relative;
         }
 
+        .stat-group { display: flex; gap: 10px; align-items: center; }
         .stat-box {
-            font-size: 0.9rem;
+            background: rgba(255,255,255,0.05);
+            padding: 5px 10px;
+            border-radius: 4px;
             font-weight: 800;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: var(--glass);
-            padding: 5px 12px;
-            border-radius: 6px;
+            font-size: 0.8rem;
+            border: 1px solid rgba(255,255,255,0.1);
+            white-space: nowrap;
         }
 
-        .control-group {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        input[type=range] { cursor: pointer; accent-color: var(--neon-blue); width: 70px; }
+        input[type=range] { cursor: pointer; accent-color: var(--neon-blue); width: 50px; vertical-align: middle; }
 
         /* --- Play Area --- */
         #play-area {
-            flex-grow: 1;
-            position: relative;
+            position: absolute;
+            top: var(--header-h);
+            bottom: var(--footer-h);
+            left: 0; right: 0;
             overflow: hidden;
-            background: radial-gradient(circle at center, #111827 0%, #020617 100%);
-            /* Words spawn starting here, below the header */
+            background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
         }
 
         .invader {
             position: absolute;
-            padding: 8px 12px;
+            width: 130px;
+            padding: 10px;
             background: rgba(15, 23, 42, 0.9);
             border: 2px solid var(--neon-blue);
             color: white;
             border-radius: 6px;
             font-weight: 700;
-            font-size: 0.95rem;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            z-index: 2;
-            width: 120px;
+            font-size: 0.9rem;
             text-align: center;
-            transition: border-color 0.2s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            z-index: 10;
         }
 
         .laser {
@@ -91,7 +80,6 @@
             width: 3px; height: 25px;
             background: var(--neon-green);
             box-shadow: 0 0 10px var(--neon-green);
-            z-index: 5;
         }
 
         #ship {
@@ -104,19 +92,21 @@
 
         /* --- Definition Boards --- */
         #controls {
-            height: 220px;
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: var(--footer-h);
             background: #0f172a;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
+            gap: 10px;
             padding: 15px;
+            border-top: 2px solid rgba(255,255,255,0.1);
             box-sizing: border-box;
-            border-top: 2px solid rgba(255, 255, 255, 0.15);
         }
 
         .def-btn {
-            background: var(--glass);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
             color: #cbd5e1;
             border-radius: 8px;
             padding: 10px;
@@ -128,37 +118,53 @@
             position: relative;
         }
 
-        .def-btn.ready { border-color: var(--neon-purple); color: white; opacity: 1; }
-        .def-btn.queued { opacity: 0.4; }
+        /* Hint State */
+        .def-btn.hint-active {
+            border-color: var(--neon-blue);
+            box-shadow: inset 0 0 10px rgba(56, 189, 248, 0.3);
+            color: white;
+        }
 
         .def-btn:hover {
-            background: rgba(56, 189, 248, 0.1);
-            border-color: var(--neon-blue);
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.3);
         }
 
-        .pause-btn {
-            background: var(--neon-purple);
-            border: none; color: white;
-            padding: 8px 16px; border-radius: 4px;
-            font-weight: bold; cursor: pointer;
+        .btn-tag {
+            position: absolute; top: 4px; left: 6px;
+            font-size: 0.6rem; font-weight: bold; color: rgba(255,255,255,0.2);
         }
+
+        /* Header Buttons */
+        .header-btn {
+            border: none; padding: 6px 12px; border-radius: 4px;
+            font-weight: bold; font-size: 0.75rem; cursor: pointer;
+            transition: 0.2s;
+        }
+        .pause-btn { background: var(--neon-purple); color: white; }
+        .hint-btn { background: #334155; color: white; min-width: 80px; }
+        .hint-btn.on { background: var(--neon-blue); color: black; }
 
         /* --- Screens --- */
         .overlay {
-            position: absolute;
-            inset: 0;
-            background: rgba(2, 6, 23, 0.95);
+            position: absolute; inset: 0;
+            background: rgba(2, 6, 23, 0.96);
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            z-index: 100; text-align: center;
+            z-index: 200; text-align: center;
         }
 
         .main-btn {
-            background: var(--neon-blue);
-            color: black; border: none;
-            padding: 15px 40px; font-size: 1.2rem;
-            font-weight: 900; border-radius: 4px;
-            cursor: pointer; margin-top: 20px;
+            background: var(--neon-blue); color: black;
+            border: none; padding: 15px 40px; font-size: 1.2rem;
+            font-weight: bold; border-radius: 4px; cursor: pointer;
+        }
+
+        #pause-indicator {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4rem; font-weight: 900; color: rgba(255,255,255,0.05);
+            pointer-events: none; z-index: 5; letter-spacing: 15px;
         }
 
         .hidden { display: none !important; }
@@ -167,48 +173,42 @@
 <body>
 
 <div id="game-container">
-    <div id="header-ui">
-        <div class="stat-box">SCORE: <span id="score">0</span></div>
-        <div class="stat-box">HP: <span id="health">100</span>%</div>
+    <div id="ui-header">
+        <div class="stat-group">
+            <div class="stat-box">SCORE: <span id="score">0</span></div>
+            <div class="stat-box">HP: <span id="health">100</span>%</div>
+        </div>
         
-        <div class="control-group">
-            <div class="stat-box">
-                SPD <input type="range" id="speed-slider" min="0.3" max="2.0" step="0.1" value="0.6">
-            </div>
-            <div class="stat-box">
-                MAX <input type="range" id="limit-slider" min="1" max="4" step="1" value="1">
-            </div>
-            <button class="pause-btn" id="pause-btn" onclick="togglePause()">PAUSE</button>
+        <div class="stat-group">
+            <div class="stat-box">SPD <input type="range" id="speed-slider" min="0.3" max="2.0" step="0.1" value="0.5"></div>
+            <div class="stat-box">MAX <input type="range" id="limit-slider" min="1" max="4" step="1" value="1"></div>
+            <button class="header-btn hint-btn" onclick="toggleHint()" id="hint-btn">HINT: OFF</button>
+            <button class="header-btn pause-btn" onclick="togglePause()" id="pause-btn">PAUSE</button>
         </div>
     </div>
 
     <div id="play-area">
+        <div id="pause-indicator" class="hidden">PAUSED</div>
         <svg id="ship" viewBox="0 0 50 50">
             <path d="M25 5 L45 40 L35 35 L25 45 L15 35 L5 40 Z" fill="#38bdf8" stroke="white" stroke-width="1"/>
         </svg>
     </div>
 
     <div id="controls">
-        <button class="def-btn" id="btn-0">---</button>
-        <button class="def-btn" id="btn-1">---</button>
-        <button class="def-btn" id="btn-2">---</button>
-        <button class="def-btn" id="btn-3">---</button>
+        <button class="def-btn" id="btn-0"><span class="btn-tag">01</span><span class="txt"></span></button>
+        <button class="def-btn" id="btn-1"><span class="btn-tag">02</span><span class="txt"></span></button>
+        <button class="def-btn" id="btn-2"><span class="btn-tag">03</span><span class="txt"></span></button>
+        <button class="def-btn" id="btn-3"><span class="btn-tag">04</span><span class="txt"></span></button>
     </div>
 
-    <!-- Start/Pause/Game Over Screens -->
     <div id="start-screen" class="overlay">
         <h1 style="color: var(--neon-blue); font-size: 2.5rem; margin:0;">VOCAB STRIKER</h1>
-        <p style="color: var(--neon-purple); letter-spacing: 3px;">TACTICAL PROTOCOL</p>
-        <button class="main-btn" onclick="startGame()">INITIATE MISSION</button>
-    </div>
-
-    <div id="pause-screen" class="overlay hidden">
-        <h1 style="color: var(--neon-purple);">PAUSED</h1>
-        <button class="main-btn" onclick="togglePause()">RESUME</button>
+        <p style="color: var(--neon-purple); letter-spacing: 5px; font-weight: bold; margin-bottom: 30px;">GHOST PROTOCOL</p>
+        <button class="main-btn" onclick="startGame()">INITIATE</button>
     </div>
 
     <div id="game-over-screen" class="overlay hidden">
-        <h1 style="color: var(--neon-red);">MISSION FAILED</h1>
+        <h1 style="color: var(--neon-red); font-size: 3rem;">MISSION FAILED</h1>
         <p id="final-score" style="font-size: 1.5rem;"></p>
         <button class="main-btn" onclick="startGame()">RESTART</button>
     </div>
@@ -848,7 +848,7 @@ lithe,"graceful, flexible, supple",
 litigant,someone engaged in a lawsuit,
 lucid,"clear, easily understandable",
 luminous,brightly shining,
-lurid,"ghastly, sensational",
+lurid,"ghastly, sensation",
 maelstrom,a destructive whirpool which rapidly sucks in objects,
 magnanimous,"noble, generous",
 malediction,a curse,
@@ -1207,6 +1207,7 @@ zealous,"fervent, filled with eagerness in pursuit of something",
 zenith,"the highest point, culminating point",
 zephyr,a gentle breeze`;
 
+    // 1. Data Processing
     const fullList = rawData.split('\n').map(line => {
         const parts = line.split(/,(.+)/);
         if(!parts[0] || !parts[1]) return null;
@@ -1216,18 +1217,19 @@ zephyr,a gentle breeze`;
         };
     }).filter(x => x !== null);
 
+    // 2. State
     let score = 0;
     let health = 100;
     let gameActive = false;
     let isPaused = false;
-    let speed = 0.6;
+    let hintEnabled = false;
+    let speed = 0.5;
     let maxOnScreen = 1;
     let lastSpawnTime = 0;
     const spawnDelay = 2200;
 
-    // Fixed 4 lanes
-    let laneQueue = [null, null, null, null]; 
-    let masterDeck = [];
+    let windowQueue = [null, null, null, null];
+    let masterQueue = [];
 
     const playArea = document.getElementById('play-area');
     const ship = document.getElementById('ship');
@@ -1235,16 +1237,32 @@ zephyr,a gentle breeze`;
     const healthEl = document.getElementById('health');
     const speedSlider = document.getElementById('speed-slider');
     const limitSlider = document.getElementById('limit-slider');
+    const hintBtn = document.getElementById('hint-btn');
     const pauseBtn = document.getElementById('pause-btn');
+    const pauseIndicator = document.getElementById('pause-indicator');
 
     speedSlider.oninput = (e) => { speed = parseFloat(e.target.value); };
     limitSlider.oninput = (e) => { maxOnScreen = parseInt(e.target.value); };
 
-    function refreshLaneQueue() {
+    function toggleHint() {
+        hintEnabled = !hintEnabled;
+        hintBtn.innerText = hintEnabled ? "HINT: ON" : "HINT: OFF";
+        hintBtn.classList.toggle('on', hintEnabled);
+        for(let i=0; i<4; i++) updateButtonUI(i);
+    }
+
+    function togglePause() {
+        if (!gameActive) return;
+        isPaused = !isPaused;
+        pauseBtn.innerText = isPaused ? "RESUME" : "PAUSE";
+        pauseIndicator.classList.toggle('hidden', !isPaused);
+    }
+
+    function refreshWindow() {
         for (let i = 0; i < 4; i++) {
-            if (laneQueue[i] === null && masterDeck.length > 0) {
-                const next = masterDeck.shift();
-                laneQueue[i] = { ...next, isDropped: false, invader: null };
+            if (windowQueue[i] === null && masterQueue.length > 0) {
+                const next = masterQueue.shift();
+                windowQueue[i] = { ...next, isDropped: false, invader: null };
             }
             updateButtonUI(i);
         }
@@ -1252,15 +1270,20 @@ zephyr,a gentle breeze`;
 
     function updateButtonUI(index) {
         const btn = document.getElementById(`btn-${index}`);
-        const data = laneQueue[index];
+        const data = windowQueue[index];
         if (data) {
-            btn.innerText = data.def;
-            btn.classList.remove('queued', 'ready');
-            btn.classList.add(data.isDropped ? 'ready' : 'queued');
+            btn.querySelector('.txt').innerText = data.def;
+            // No dropping/incoming visual classes anymore
+            // Hint class only
+            if (hintEnabled && data.isDropped) {
+                btn.classList.add('hint-active');
+            } else {
+                btn.classList.remove('hint-active');
+            }
             btn.onclick = () => checkShot(index);
         } else {
-            btn.innerText = "---";
-            btn.classList.add('queued');
+            btn.querySelector('.txt').innerText = "---";
+            btn.classList.remove('hint-active');
             btn.onclick = null;
         }
     }
@@ -1269,49 +1292,48 @@ zephyr,a gentle breeze`;
         if (!gameActive || isPaused) return;
         if (time - lastSpawnTime < spawnDelay) return;
 
-        const fallingCount = laneQueue.filter(x => x && x.isDropped).length;
-        if (fallingCount >= maxOnScreen) return;
+        const currentFalling = windowQueue.filter(item => item && item.isDropped).length;
+        if (currentFalling >= maxOnScreen) return;
 
-        const nextLane = laneQueue.findIndex(x => x && !x.isDropped);
-        if (nextLane === -1) return;
+        const nextSlot = windowQueue.findIndex(item => item && !item.isDropped);
+        if (nextSlot === -1) return;
 
-        const target = laneQueue[nextLane];
+        const target = windowQueue[nextSlot];
         const el = document.createElement('div');
         el.className = 'invader';
         el.innerText = target.word;
         playArea.appendChild(el);
 
-        // Positioning: Middle area (10% to 90% width)
-        const usableWidth = playArea.clientWidth * 0.8;
-        const startX = playArea.clientWidth * 0.1;
+        const usableWidth = playArea.clientWidth * 0.6;
+        const startX = playArea.clientWidth * 0.2;
         const laneWidth = usableWidth / 4;
-        const xPos = startX + (nextLane * laneWidth) + (laneWidth / 2) - 60;
+        const xPos = startX + (nextSlot * laneWidth) + (laneWidth / 2) - 65;
 
         el.style.left = xPos + 'px';
-        el.style.top = '-50px';
+        el.style.top = '-60px';
 
         target.isDropped = true;
-        target.invader = { el, y: -50, x: xPos };
+        target.invader = { el, y: -60, x: xPos };
         
         lastSpawnTime = time;
-        updateButtonUI(nextLane);
+        updateButtonUI(nextSlot);
     }
 
     function checkShot(index) {
         if (!gameActive || isPaused) return;
-        const target = laneQueue[index];
+        const target = windowQueue[index];
         
         if (!target || !target.isDropped) {
-            applyPenalty(5);
+            applyPenalty(5); 
             return;
         }
 
         const inv = target.invader;
-        ship.style.left = (inv.x + 60) + 'px';
+        ship.style.left = (inv.x + 65) + 'px';
 
         const laser = document.createElement('div');
         laser.className = 'laser';
-        laser.style.left = (inv.x + 60) + 'px';
+        laser.style.left = (inv.x + 65) + 'px';
         laser.style.bottom = '50px';
         playArea.appendChild(laser);
 
@@ -1321,8 +1343,8 @@ zephyr,a gentle breeze`;
         setTimeout(() => {
             laser.remove();
             if (inv.el) inv.el.remove();
-            laneQueue[index] = null;
-            refreshLaneQueue();
+            windowQueue[index] = null;
+            refreshWindow();
             score += 10;
             scoreEl.innerText = score;
             health = Math.min(100, health + 5);
@@ -1333,22 +1355,15 @@ zephyr,a gentle breeze`;
     function applyPenalty(amt) {
         health = Math.max(0, health - amt);
         healthEl.innerText = health;
-        playArea.style.boxShadow = "inset 0 0 40px rgba(239, 68, 68, 0.4)";
+        playArea.style.boxShadow = "inset 0 0 50px rgba(239, 68, 68, 0.4)";
         setTimeout(() => playArea.style.boxShadow = "none", 200);
         if (health <= 0) endGame();
-    }
-
-    function togglePause() {
-        if (!gameActive) return;
-        isPaused = !isPaused;
-        document.getElementById('pause-screen').classList.toggle('hidden', !isPaused);
-        pauseBtn.innerText = isPaused ? "RESUME" : "PAUSE";
     }
 
     function update(time) {
         if (gameActive && !isPaused) {
             spawnNext(time);
-            laneQueue.forEach((item, index) => {
+            windowQueue.forEach((item, index) => {
                 if (item && item.isDropped) {
                     const inv = item.invader;
                     inv.y += speed;
@@ -1356,8 +1371,8 @@ zephyr,a gentle breeze`;
 
                     if (inv.y > playArea.clientHeight - 40) {
                         inv.el.remove();
-                        laneQueue[index] = null;
-                        refreshLaneQueue();
+                        windowQueue[index] = null;
+                        refreshWindow();
                         applyPenalty(20);
                     }
                 }
@@ -1376,16 +1391,16 @@ zephyr,a gentle breeze`;
         score = 0; health = 100;
         scoreEl.innerText = '0'; healthEl.innerText = '100';
         playArea.querySelectorAll('.invader').forEach(i => i.remove());
-        masterDeck = [...fullList].sort(() => Math.random() - 0.5);
-        laneQueue = [null, null, null, null];
-        refreshLaneQueue();
+        masterQueue = [...fullList].sort(() => Math.random() - 0.5);
+        windowQueue = [null, null, null, null];
+        refreshWindow();
         lastSpawnTime = 0;
         gameActive = true;
         isPaused = false;
+        pauseBtn.innerText = "PAUSE";
         document.getElementById('start-screen').classList.add('hidden');
         document.getElementById('game-over-screen').classList.add('hidden');
-        document.getElementById('pause-screen').classList.add('hidden');
-        pauseBtn.innerText = "PAUSE";
+        pauseIndicator.classList.add('hidden');
         requestAnimationFrame(update);
     }
 </script>
