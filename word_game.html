@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vocab Striker: Ghost Protocol</title>
+    <title>Vocab Striker: Chaos Protocol</title>
     <style>
         :root {
             --space-bg: #020617;
@@ -111,28 +111,22 @@
             border-radius: 8px;
             padding: 10px;
             cursor: pointer;
-            font-size: 0.85rem;
-            transition: all 0.2s;
+            font-size: 0.82rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex; align-items: center; justify-content: center;
             text-align: center;
             position: relative;
         }
 
-        /* Hint State */
         .def-btn.hint-active {
             border-color: var(--neon-blue);
-            box-shadow: inset 0 0 10px rgba(56, 189, 248, 0.3);
+            box-shadow: inset 0 0 15px rgba(56, 189, 248, 0.4);
             color: white;
         }
 
         .def-btn:hover {
             background: rgba(255, 255, 255, 0.05);
             border-color: rgba(255, 255, 255, 0.3);
-        }
-
-        .btn-tag {
-            position: absolute; top: 4px; left: 6px;
-            font-size: 0.6rem; font-weight: bold; color: rgba(255,255,255,0.2);
         }
 
         /* Header Buttons */
@@ -195,15 +189,16 @@
     </div>
 
     <div id="controls">
-        <button class="def-btn" id="btn-0"><span class="btn-tag">01</span><span class="txt"></span></button>
-        <button class="def-btn" id="btn-1"><span class="btn-tag">02</span><span class="txt"></span></button>
-        <button class="def-btn" id="btn-2"><span class="btn-tag">03</span><span class="txt"></span></button>
-        <button class="def-btn" id="btn-3"><span class="btn-tag">04</span><span class="txt"></span></button>
+        <button class="def-btn" id="btn-0"><span class="txt"></span></button>
+        <button class="def-btn" id="btn-1"><span class="txt"></span></button>
+        <button class="def-btn" id="btn-2"><span class="txt"></span></button>
+        <button class="def-btn" id="btn-3"><span class="txt"></span></button>
     </div>
 
     <div id="start-screen" class="overlay">
         <h1 style="color: var(--neon-blue); font-size: 2.5rem; margin:0;">VOCAB STRIKER</h1>
-        <p style="color: var(--neon-purple); letter-spacing: 5px; font-weight: bold; margin-bottom: 30px;">GHOST PROTOCOL</p>
+        <p style="color: var(--neon-purple); letter-spacing: 5px; font-weight: bold; margin-bottom: 30px;">CHAOS PROTOCOL</p>
+        <p style="color: #94a3b8; max-width: 400px; font-size: 0.9rem; line-height: 1.5;">Every time a word drops or is destroyed, the definition boards will scramble. Keep your eyes on the text!</p>
         <button class="main-btn" onclick="startGame()">INITIATE</button>
     </div>
 
@@ -215,6 +210,7 @@
 </div>
 
 <script>
+    // CSV Data (Logic handles full list provided in prompt)
     const rawData = `abase,"to humiliate, degrade",
 abate,"to reduce,lessen",
 abdicate,to give up a position,
@@ -1228,8 +1224,12 @@ zephyr,a gentle breeze`;
     let lastSpawnTime = 0;
     const spawnDelay = 2200;
 
+    // Window stores the 4 words currently assigned to lanes
     let windowQueue = [null, null, null, null];
     let masterQueue = [];
+    
+    // Mapping of which Physical Button (0-3) points to which Logic Slot (0-3)
+    let btnMapping = [0, 1, 2, 3]; 
 
     const playArea = document.getElementById('play-area');
     const ship = document.getElementById('ship');
@@ -1244,11 +1244,25 @@ zephyr,a gentle breeze`;
     speedSlider.oninput = (e) => { speed = parseFloat(e.target.value); };
     limitSlider.oninput = (e) => { maxOnScreen = parseInt(e.target.value); };
 
+    // Utility: Shuffle
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    function scrambleButtons() {
+        shuffleArray(btnMapping);
+        updateAllButtonsUI();
+    }
+
     function toggleHint() {
         hintEnabled = !hintEnabled;
         hintBtn.innerText = hintEnabled ? "HINT: ON" : "HINT: OFF";
         hintBtn.classList.toggle('on', hintEnabled);
-        for(let i=0; i<4; i++) updateButtonUI(i);
+        updateAllButtonsUI();
     }
 
     function togglePause() {
@@ -1259,33 +1273,37 @@ zephyr,a gentle breeze`;
     }
 
     function refreshWindow() {
+        let changed = false;
         for (let i = 0; i < 4; i++) {
             if (windowQueue[i] === null && masterQueue.length > 0) {
                 const next = masterQueue.shift();
                 windowQueue[i] = { ...next, isDropped: false, invader: null };
+                changed = true;
             }
-            updateButtonUI(i);
         }
+        if (changed) scrambleButtons();
+        else updateAllButtonsUI();
     }
 
-    function updateButtonUI(index) {
-        const btn = document.getElementById(`btn-${index}`);
-        const data = windowQueue[index];
-        if (data) {
-            btn.querySelector('.txt').innerText = data.def;
-            // No dropping/incoming visual classes anymore
-            // Hint class only
-            if (hintEnabled && data.isDropped) {
-                btn.classList.add('hint-active');
-            } else {
+    function updateAllButtonsUI() {
+        // Iterate through physical buttons and assign content based on scrambled mapping
+        btnMapping.forEach((slotIndex, physicalBtnIndex) => {
+            const btn = document.getElementById(`btn-${physicalBtnIndex}`);
+            const data = windowQueue[slotIndex];
+            
+            if (data) {
+                btn.querySelector('.txt').innerText = data.def;
                 btn.classList.remove('hint-active');
+                if (hintEnabled && data.isDropped) {
+                    btn.classList.add('hint-active');
+                }
+                btn.onclick = () => checkShot(slotIndex);
+            } else {
+                btn.querySelector('.txt').innerText = "---";
+                btn.classList.remove('hint-active');
+                btn.onclick = null;
             }
-            btn.onclick = () => checkShot(index);
-        } else {
-            btn.querySelector('.txt').innerText = "---";
-            btn.classList.remove('hint-active');
-            btn.onclick = null;
-        }
+        });
     }
 
     function spawnNext(time) {
@@ -1304,6 +1322,7 @@ zephyr,a gentle breeze`;
         el.innerText = target.word;
         playArea.appendChild(el);
 
+        // Positioning: Center 60% of width
         const usableWidth = playArea.clientWidth * 0.6;
         const startX = playArea.clientWidth * 0.2;
         const laneWidth = usableWidth / 4;
@@ -1316,12 +1335,12 @@ zephyr,a gentle breeze`;
         target.invader = { el, y: -60, x: xPos };
         
         lastSpawnTime = time;
-        updateButtonUI(nextSlot);
+        updateAllButtonsUI();
     }
 
-    function checkShot(index) {
+    function checkShot(slotIndex) {
         if (!gameActive || isPaused) return;
-        const target = windowQueue[index];
+        const target = windowQueue[slotIndex];
         
         if (!target || !target.isDropped) {
             applyPenalty(5); 
@@ -1343,8 +1362,8 @@ zephyr,a gentle breeze`;
         setTimeout(() => {
             laser.remove();
             if (inv.el) inv.el.remove();
-            windowQueue[index] = null;
-            refreshWindow();
+            windowQueue[slotIndex] = null;
+            refreshWindow(); // This triggers scramble
             score += 10;
             scoreEl.innerText = score;
             health = Math.min(100, health + 5);
@@ -1372,7 +1391,7 @@ zephyr,a gentle breeze`;
                     if (inv.y > playArea.clientHeight - 40) {
                         inv.el.remove();
                         windowQueue[index] = null;
-                        refreshWindow();
+                        refreshWindow(); // This triggers scramble
                         applyPenalty(20);
                     }
                 }
@@ -1393,6 +1412,7 @@ zephyr,a gentle breeze`;
         playArea.querySelectorAll('.invader').forEach(i => i.remove());
         masterQueue = [...fullList].sort(() => Math.random() - 0.5);
         windowQueue = [null, null, null, null];
+        btnMapping = [0, 1, 2, 3];
         refreshWindow();
         lastSpawnTime = 0;
         gameActive = true;
