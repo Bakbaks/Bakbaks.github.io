@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vocab Striker: Configurable Queue</title>
+    <title>Vocab Striker: Tactical Edition</title>
     <style>
         :root {
             --space-bg: #020617;
@@ -12,6 +12,7 @@
             --neon-green: #22c55e;
             --neon-red: #ef4444;
             --glass: rgba(255, 255, 255, 0.08);
+            --header-h: 80px;
         }
 
         body, html {
@@ -19,7 +20,7 @@
             width: 100%; height: 100%;
             overflow: hidden;
             background-color: var(--space-bg);
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', system-ui, sans-serif;
             color: white;
         }
 
@@ -29,55 +30,65 @@
             display: flex; flex-direction: column;
         }
 
-        #ui-layer {
-            position: absolute;
-            top: 10px; left: 15px; right: 15px;
-            display: flex; justify-content: space-between;
-            pointer-events: none; z-index: 20;
+        /* --- Non-Obstructive Header --- */
+        #header-ui {
+            height: var(--header-h);
+            background: rgba(15, 23, 42, 0.95);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 50;
         }
-
-        .stat-group { display: flex; flex-direction: column; gap: 8px; pointer-events: auto; }
 
         .stat-box {
-            background: rgba(15, 23, 42, 0.9);
-            backdrop-filter: blur(10px);
-            padding: 8px 15px;
-            border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.1);
-            font-size: 0.85rem;
-            font-weight: bold;
-            display: flex; align-items: center; gap: 10px;
+            font-size: 0.9rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--glass);
+            padding: 5px 12px;
+            border-radius: 6px;
         }
 
-        input[type=range] { cursor: pointer; accent-color: var(--neon-blue); width: 80px; }
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
 
+        input[type=range] { cursor: pointer; accent-color: var(--neon-blue); width: 70px; }
+
+        /* --- Play Area --- */
         #play-area {
             flex-grow: 1;
             position: relative;
             overflow: hidden;
             background: radial-gradient(circle at center, #111827 0%, #020617 100%);
-            border-bottom: 4px solid var(--neon-red);
+            /* Words spawn starting here, below the header */
         }
 
         .invader {
             position: absolute;
-            padding: 10px 15px;
-            background: rgba(15, 23, 42, 0.95);
+            padding: 8px 12px;
+            background: rgba(15, 23, 42, 0.9);
             border: 2px solid var(--neon-blue);
             color: white;
             border-radius: 6px;
-            font-weight: 800;
-            font-size: 1rem;
-            box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+            font-weight: 700;
+            font-size: 0.95rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
             z-index: 2;
-            width: 140px;
+            width: 120px;
             text-align: center;
-            box-sizing: border-box;
+            transition: border-color 0.2s;
         }
 
         .laser {
             position: absolute;
-            width: 3px; height: 30px;
+            width: 3px; height: 25px;
             background: var(--neon-green);
             box-shadow: 0 0 10px var(--neon-green);
             z-index: 5;
@@ -85,70 +96,69 @@
 
         #ship {
             position: absolute;
-            bottom: 5px; left: 50%;
+            bottom: 10px; left: 50%;
             transform: translateX(-50%);
-            width: 44px; height: 44px;
+            width: 40px; height: 40px;
             transition: left 0.15s ease-out;
         }
 
+        /* --- Definition Boards --- */
         #controls {
-            height: 240px;
+            height: 220px;
             background: #0f172a;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            gap: 12px;
             padding: 15px;
             box-sizing: border-box;
-            border-top: 1px solid rgba(255,255,255,0.2);
+            border-top: 2px solid rgba(255, 255, 255, 0.15);
         }
 
         .def-btn {
             background: var(--glass);
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             color: #cbd5e1;
-            border-radius: 6px;
+            border-radius: 8px;
             padding: 10px;
             cursor: pointer;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             transition: all 0.2s;
             display: flex; align-items: center; justify-content: center;
             text-align: center;
-            line-height: 1.3;
             position: relative;
         }
 
-        .def-btn.waiting { opacity: 0.4; }
-        .def-btn.active { border-color: var(--neon-purple); opacity: 1; }
+        .def-btn.ready { border-color: var(--neon-purple); color: white; opacity: 1; }
+        .def-btn.queued { opacity: 0.4; }
 
         .def-btn:hover {
-            border-color: var(--neon-blue);
             background: rgba(56, 189, 248, 0.1);
-            color: white;
+            border-color: var(--neon-blue);
         }
 
-        .btn-label {
-            position: absolute;
-            top: 2px; left: 5px;
-            font-size: 0.6rem;
-            color: var(--neon-blue);
-            text-transform: uppercase;
+        .pause-btn {
+            background: var(--neon-purple);
+            border: none; color: white;
+            padding: 8px 16px; border-radius: 4px;
+            font-weight: bold; cursor: pointer;
         }
 
+        /* --- Screens --- */
         .overlay {
             position: absolute;
             inset: 0;
-            background: rgba(2, 6, 23, 0.98);
+            background: rgba(2, 6, 23, 0.95);
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            z-index: 100; text-align: center; padding: 30px;
+            z-index: 100; text-align: center;
         }
 
-        button.main-btn {
+        .main-btn {
             background: var(--neon-blue);
             color: black; border: none;
-            padding: 18px 45px; font-size: 1.3rem;
+            padding: 15px 40px; font-size: 1.2rem;
             font-weight: 900; border-radius: 4px;
-            cursor: pointer; margin-top: 25px;
+            cursor: pointer; margin-top: 20px;
         }
 
         .hidden { display: none !important; }
@@ -157,22 +167,18 @@
 <body>
 
 <div id="game-container">
-    <div id="ui-layer">
-        <div class="stat-group">
-            <div class="stat-box">Score: <span id="score">0</span></div>
-            <div class="stat-box">Health: <span id="health">100</span>%</div>
-        </div>
-        <div class="stat-group">
+    <div id="header-ui">
+        <div class="stat-box">SCORE: <span id="score">0</span></div>
+        <div class="stat-box">HP: <span id="health">100</span>%</div>
+        
+        <div class="control-group">
             <div class="stat-box">
-                Speed: 
-                <input type="range" id="speed-slider" min="0.3" max="2.0" step="0.1" value="0.7">
-                <span id="speed-val">0.7</span>
+                SPD <input type="range" id="speed-slider" min="0.3" max="2.0" step="0.1" value="0.6">
             </div>
             <div class="stat-box">
-                Max Drop: 
-                <input type="range" id="limit-slider" min="1" max="4" step="1" value="1">
-                <span id="limit-val">1</span>
+                MAX <input type="range" id="limit-slider" min="1" max="4" step="1" value="1">
             </div>
+            <button class="pause-btn" id="pause-btn" onclick="togglePause()">PAUSE</button>
         </div>
     </div>
 
@@ -183,27 +189,28 @@
     </div>
 
     <div id="controls">
-        <button class="def-btn waiting" id="btn-0"><span class="btn-label">Slot 1</span><span class="text">---</span></button>
-        <button class="def-btn waiting" id="btn-1"><span class="btn-label">Slot 2</span><span class="text">---</span></button>
-        <button class="def-btn waiting" id="btn-2"><span class="btn-label">Slot 3</span><span class="text">---</span></button>
-        <button class="def-btn waiting" id="btn-3"><span class="btn-label">Slot 4</span><span class="text">---</span></button>
+        <button class="def-btn" id="btn-0">---</button>
+        <button class="def-btn" id="btn-1">---</button>
+        <button class="def-btn" id="btn-2">---</button>
+        <button class="def-btn" id="btn-3">---</button>
     </div>
 
+    <!-- Start/Pause/Game Over Screens -->
     <div id="start-screen" class="overlay">
-        <h1 style="color: var(--neon-blue); font-size: 3rem; margin:0;">VOCAB STRIKER</h1>
-        <p style="color: var(--neon-purple); letter-spacing: 5px; font-weight: bold;">ADJUSTABLE QUEUE</p>
-        <div style="color: #94a3b8; max-width: 500px; text-align: left; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 10px; margin-top: 20px;">
-            • Use the <strong>Max Drop</strong> slider to set how many words fall at once.<br>
-            • Buttons 1-4 show definitions for active words and the ones next in line.<br>
-            • Correct shots restore <strong>+5% Health</strong>.
-        </div>
-        <button class="main-btn" onclick="startGame()">Initiate</button>
+        <h1 style="color: var(--neon-blue); font-size: 2.5rem; margin:0;">VOCAB STRIKER</h1>
+        <p style="color: var(--neon-purple); letter-spacing: 3px;">TACTICAL PROTOCOL</p>
+        <button class="main-btn" onclick="startGame()">INITIATE MISSION</button>
+    </div>
+
+    <div id="pause-screen" class="overlay hidden">
+        <h1 style="color: var(--neon-purple);">PAUSED</h1>
+        <button class="main-btn" onclick="togglePause()">RESUME</button>
     </div>
 
     <div id="game-over-screen" class="overlay hidden">
-        <h1 style="color: var(--neon-red); font-size: 3rem;">MISSION FAILED</h1>
-        <p id="final-score" style="font-size: 2rem;"></p>
-        <button class="main-btn" onclick="startGame()">Restart</button>
+        <h1 style="color: var(--neon-red);">MISSION FAILED</h1>
+        <p id="final-score" style="font-size: 1.5rem;"></p>
+        <button class="main-btn" onclick="startGame()">RESTART</button>
     </div>
 </div>
 
@@ -508,7 +515,7 @@ cumulative,"increasing, building upon itself",
 cunning,"sly, clever at being deceitful",
 cupidity,"greed, strong desire",
 cursory,brief to the point of being superficial,
-curt,abruptly and rudely short,
+curt,abstractly and rudely short,
 curtail,"to lessen, reduce",
 daunting,"intimidating, cuasing one to lose courage",
 dearth,"a lack,scarcity",
@@ -701,7 +708,7 @@ foster,"to stimulate, promote, encourage",
 fractious,troublesome or irritable,
 fraught,filled or accompanied with,
 frenetic,"frenzied, hectic, frantic",
-frivolous,"of little importance, trifling",
+frivolous,"of little importance, testimonial",
 frugal,"thrifty, econoical",
 furtive,"secretive, sly",
 garish,"gaudy, in bad taste",
@@ -925,7 +932,7 @@ paragon,a model of excellence or perfection,
 paramount,"greatest in importance, rank, character",
 pariah,an outcast,
 parody,a satirical imitation,
-parsimony,"frugality, stinginess",
+parsimony,"frugality, stringiness",
 partisan,"a follower, adherent",
 patent,"readily seen or understood, clear",
 pathology,a deviation from the normal,
@@ -1200,7 +1207,6 @@ zealous,"fervent, filled with eagerness in pursuit of something",
 zenith,"the highest point, culminating point",
 zephyr,a gentle breeze`;
 
-    // Data Parsing
     const fullList = rawData.split('\n').map(line => {
         const parts = line.split(/,(.+)/);
         if(!parts[0] || !parts[1]) return null;
@@ -1210,19 +1216,18 @@ zephyr,a gentle breeze`;
         };
     }).filter(x => x !== null);
 
-    // State
     let score = 0;
     let health = 100;
     let gameActive = false;
-    let speed = 0.7;
+    let isPaused = false;
+    let speed = 0.6;
     let maxOnScreen = 1;
     let lastSpawnTime = 0;
-    const spawnDelay = 2000;
+    const spawnDelay = 2200;
 
-    // The 4 slots (Lanes)
-    // windowQueue[i] contains the word data for button i
-    let windowQueue = [null, null, null, null];
-    let masterQueue = [];
+    // Fixed 4 lanes
+    let laneQueue = [null, null, null, null]; 
+    let masterDeck = [];
 
     const playArea = document.getElementById('play-area');
     const ship = document.getElementById('ship');
@@ -1230,17 +1235,16 @@ zephyr,a gentle breeze`;
     const healthEl = document.getElementById('health');
     const speedSlider = document.getElementById('speed-slider');
     const limitSlider = document.getElementById('limit-slider');
+    const pauseBtn = document.getElementById('pause-btn');
 
-    // UI Listeners
-    speedSlider.oninput = (e) => { speed = parseFloat(e.target.value); document.getElementById('speed-val').innerText = speed.toFixed(1); };
-    limitSlider.oninput = (e) => { maxOnScreen = parseInt(e.target.value); document.getElementById('limit-val').innerText = maxOnScreen; };
+    speedSlider.oninput = (e) => { speed = parseFloat(e.target.value); };
+    limitSlider.oninput = (e) => { maxOnScreen = parseInt(e.target.value); };
 
-    // Fill the 4-slot window from the shuffled deck
-    function refreshWindow() {
+    function refreshLaneQueue() {
         for (let i = 0; i < 4; i++) {
-            if (windowQueue[i] === null && masterQueue.length > 0) {
-                const next = masterQueue.shift();
-                windowQueue[i] = { ...next, isDropped: false, invader: null };
+            if (laneQueue[i] === null && masterDeck.length > 0) {
+                const next = masterDeck.shift();
+                laneQueue[i] = { ...next, isDropped: false, invader: null };
             }
             updateButtonUI(i);
         }
@@ -1248,85 +1252,77 @@ zephyr,a gentle breeze`;
 
     function updateButtonUI(index) {
         const btn = document.getElementById(`btn-${index}`);
-        const data = windowQueue[index];
+        const data = laneQueue[index];
         if (data) {
-            btn.querySelector('.text').innerText = data.def;
-            btn.classList.remove('waiting');
-            if (data.isDropped) btn.classList.add('active');
-            else btn.classList.remove('active');
+            btn.innerText = data.def;
+            btn.classList.remove('queued', 'ready');
+            btn.classList.add(data.isDropped ? 'ready' : 'queued');
             btn.onclick = () => checkShot(index);
         } else {
-            btn.querySelector('.text').innerText = "---";
-            btn.classList.add('waiting');
+            btn.innerText = "---";
+            btn.classList.add('queued');
             btn.onclick = null;
         }
     }
 
-    // Drop words one-by-one based on the user-defined limit
     function spawnNext(time) {
-        if (!gameActive) return;
+        if (!gameActive || isPaused) return;
         if (time - lastSpawnTime < spawnDelay) return;
 
-        // How many are currently falling?
-        const currentFalling = windowQueue.filter(item => item && item.isDropped).length;
-        if (currentFalling >= maxOnScreen) return;
+        const fallingCount = laneQueue.filter(x => x && x.isDropped).length;
+        if (fallingCount >= maxOnScreen) return;
 
-        // Find the first word in the window that is ready to drop
-        const nextSlotIndex = windowQueue.findIndex(item => item && !item.isDropped);
-        if (nextSlotIndex === -1) return;
+        const nextLane = laneQueue.findIndex(x => x && !x.isDropped);
+        if (nextLane === -1) return;
 
-        const target = windowQueue[nextSlotIndex];
+        const target = laneQueue[nextLane];
         const el = document.createElement('div');
         el.className = 'invader';
         el.innerText = target.word;
         playArea.appendChild(el);
 
-        // Lane positioning
-        const laneWidth = playArea.clientWidth / 4;
-        const xPos = (nextSlotIndex * laneWidth) + (laneWidth / 2) - 70;
+        // Positioning: Middle area (10% to 90% width)
+        const usableWidth = playArea.clientWidth * 0.8;
+        const startX = playArea.clientWidth * 0.1;
+        const laneWidth = usableWidth / 4;
+        const xPos = startX + (nextLane * laneWidth) + (laneWidth / 2) - 60;
+
         el.style.left = xPos + 'px';
-        el.style.top = '-60px';
+        el.style.top = '-50px';
 
         target.isDropped = true;
-        target.invader = { el, y: -60, x: xPos };
+        target.invader = { el, y: -50, x: xPos };
         
         lastSpawnTime = time;
-        updateButtonUI(nextSlotIndex);
+        updateButtonUI(nextLane);
     }
 
     function checkShot(index) {
-        const target = windowQueue[index];
-        if (!target || !target.isDropped || !gameActive) {
-            // Penalty for clicking a definition that isn't on screen yet
-            if (gameActive) {
-                health = Math.max(0, health - 5);
-                healthEl.innerText = health;
-                if (health <= 0) endGame();
-            }
+        if (!gameActive || isPaused) return;
+        const target = laneQueue[index];
+        
+        if (!target || !target.isDropped) {
+            applyPenalty(5);
             return;
         }
 
         const inv = target.invader;
-        const shipX = inv.x + 70;
-        ship.style.left = shipX + 'px';
+        ship.style.left = (inv.x + 60) + 'px';
 
         const laser = document.createElement('div');
         laser.className = 'laser';
-        laser.style.left = shipX + 'px';
-        laser.style.bottom = '60px';
+        laser.style.left = (inv.x + 60) + 'px';
+        laser.style.bottom = '50px';
         playArea.appendChild(laser);
 
         const targetY = playArea.clientHeight - (inv.y + 20);
-        laser.animate([{ bottom: '60px' }, { bottom: targetY + 'px' }], { duration: 100, easing: 'ease-in' });
+        laser.animate([{ bottom: '50px' }, { bottom: targetY + 'px' }], { duration: 100, easing: 'ease-in' });
 
         setTimeout(() => {
             laser.remove();
             if (inv.el) inv.el.remove();
-            
-            // Clear slot and slide a new word into this lane's queue slot
-            windowQueue[index] = null;
-            refreshWindow();
-
+            laneQueue[index] = null;
+            refreshLaneQueue();
             score += 10;
             scoreEl.innerText = score;
             health = Math.min(100, health + 5);
@@ -1334,29 +1330,39 @@ zephyr,a gentle breeze`;
         }, 100);
     }
 
-    function update(time) {
+    function applyPenalty(amt) {
+        health = Math.max(0, health - amt);
+        healthEl.innerText = health;
+        playArea.style.boxShadow = "inset 0 0 40px rgba(239, 68, 68, 0.4)";
+        setTimeout(() => playArea.style.boxShadow = "none", 200);
+        if (health <= 0) endGame();
+    }
+
+    function togglePause() {
         if (!gameActive) return;
+        isPaused = !isPaused;
+        document.getElementById('pause-screen').classList.toggle('hidden', !isPaused);
+        pauseBtn.innerText = isPaused ? "RESUME" : "PAUSE";
+    }
 
-        spawnNext(time);
+    function update(time) {
+        if (gameActive && !isPaused) {
+            spawnNext(time);
+            laneQueue.forEach((item, index) => {
+                if (item && item.isDropped) {
+                    const inv = item.invader;
+                    inv.y += speed;
+                    inv.el.style.top = inv.y + 'px';
 
-        windowQueue.forEach((item, index) => {
-            if (item && item.isDropped) {
-                const inv = item.invader;
-                inv.y += speed;
-                inv.el.style.top = inv.y + 'px';
-
-                if (inv.y > playArea.clientHeight - 40) {
-                    inv.el.remove();
-                    windowQueue[index] = null;
-                    refreshWindow();
-                    
-                    health = Math.max(0, health - 20);
-                    healthEl.innerText = health;
-                    if (health <= 0) endGame();
+                    if (inv.y > playArea.clientHeight - 40) {
+                        inv.el.remove();
+                        laneQueue[index] = null;
+                        refreshLaneQueue();
+                        applyPenalty(20);
+                    }
                 }
-            }
-        });
-
+            });
+        }
         requestAnimationFrame(update);
     }
 
@@ -1370,15 +1376,16 @@ zephyr,a gentle breeze`;
         score = 0; health = 100;
         scoreEl.innerText = '0'; healthEl.innerText = '100';
         playArea.querySelectorAll('.invader').forEach(i => i.remove());
-        
-        masterQueue = [...fullList].sort(() => Math.random() - 0.5);
-        windowQueue = [null, null, null, null];
-        refreshWindow();
-        
+        masterDeck = [...fullList].sort(() => Math.random() - 0.5);
+        laneQueue = [null, null, null, null];
+        refreshLaneQueue();
         lastSpawnTime = 0;
         gameActive = true;
+        isPaused = false;
         document.getElementById('start-screen').classList.add('hidden');
         document.getElementById('game-over-screen').classList.add('hidden');
+        document.getElementById('pause-screen').classList.add('hidden');
+        pauseBtn.innerText = "PAUSE";
         requestAnimationFrame(update);
     }
 </script>
