@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vocab Striker: Chaos Protocol</title>
+    <title>Vocab Striker: Entropy Protocol</title>
     <style>
         :root {
             --space-bg: #020617;
@@ -20,7 +20,7 @@
             width: 100%; height: 100%;
             overflow: hidden;
             background-color: var(--space-bg);
-            font-family: 'Inter', system-ui, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
             color: white;
         }
 
@@ -62,14 +62,14 @@
 
         .invader {
             position: absolute;
-            width: 130px;
+            width: 135px;
             padding: 10px;
             background: rgba(15, 23, 42, 0.9);
             border: 2px solid var(--neon-blue);
             color: white;
             border-radius: 6px;
             font-weight: 700;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             text-align: center;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
             z-index: 10;
@@ -98,7 +98,7 @@
             background: #0f172a;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            gap: 12px;
             padding: 15px;
             border-top: 2px solid rgba(255,255,255,0.1);
             box-sizing: border-box;
@@ -124,12 +124,6 @@
             color: white;
         }
 
-        .def-btn:hover {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(255, 255, 255, 0.3);
-        }
-
-        /* Header Buttons */
         .header-btn {
             border: none; padding: 6px 12px; border-radius: 4px;
             font-weight: bold; font-size: 0.75rem; cursor: pointer;
@@ -139,10 +133,9 @@
         .hint-btn { background: #334155; color: white; min-width: 80px; }
         .hint-btn.on { background: var(--neon-blue); color: black; }
 
-        /* --- Screens --- */
         .overlay {
             position: absolute; inset: 0;
-            background: rgba(2, 6, 23, 0.96);
+            background: rgba(2, 6, 23, 0.97);
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
             z-index: 200; text-align: center;
@@ -175,7 +168,7 @@
         
         <div class="stat-group">
             <div class="stat-box">SPD <input type="range" id="speed-slider" min="0.3" max="2.0" step="0.1" value="0.5"></div>
-            <div class="stat-box">MAX <input type="range" id="limit-slider" min="1" max="4" step="1" value="1"></div>
+            <div class="stat-box">LIMIT <input type="range" id="limit-slider" min="1" max="4" step="1" value="1"></div>
             <button class="header-btn hint-btn" onclick="toggleHint()" id="hint-btn">HINT: OFF</button>
             <button class="header-btn pause-btn" onclick="togglePause()" id="pause-btn">PAUSE</button>
         </div>
@@ -197,8 +190,12 @@
 
     <div id="start-screen" class="overlay">
         <h1 style="color: var(--neon-blue); font-size: 2.5rem; margin:0;">VOCAB STRIKER</h1>
-        <p style="color: var(--neon-purple); letter-spacing: 5px; font-weight: bold; margin-bottom: 30px;">CHAOS PROTOCOL</p>
-        <p style="color: #94a3b8; max-width: 400px; font-size: 0.9rem; line-height: 1.5;">Every time a word drops or is destroyed, the definition boards will scramble. Keep your eyes on the text!</p>
+        <p style="color: var(--neon-purple); letter-spacing: 5px; font-weight: bold; margin-bottom: 20px;">ENTROPY PROTOCOL</p>
+        <p style="color: #94a3b8; max-width: 500px; font-size: 0.85rem; line-height: 1.6; margin-bottom: 20px;">
+            1. Every time a word spawns or dies, the board **scrambles**.<br>
+            2. Boards for lanes without a word falling are filled with **random decoys**.<br>
+            3. Pause freezes words but keeps them visible for you to find the answer.
+        </p>
         <button class="main-btn" onclick="startGame()">INITIATE</button>
     </div>
 
@@ -210,7 +207,6 @@
 </div>
 
 <script>
-    // CSV Data (Logic handles full list provided in prompt)
     const rawData = `abase,"to humiliate, degrade",
 abate,"to reduce,lessen",
 abdicate,to give up a position,
@@ -891,7 +887,7 @@ nonchalant,"having a lack of concern, indifference",
 nondescript,lacking a distinctive character,
 notorious,widely and unfavorably known,
 novice,"a bginner, someone without training or experience",
-noxious,"harmful, unwholesome",
+noxoius,"harmful, unwholesome",
 nuance,"a slight variation in meaning, tone, expression",
 nurture,to assist the devlopment of,
 obdurate,unyielding to persuasion or moral influences,
@@ -1224,11 +1220,8 @@ zephyr,a gentle breeze`;
     let lastSpawnTime = 0;
     const spawnDelay = 2200;
 
-    // Window stores the 4 words currently assigned to lanes
     let windowQueue = [null, null, null, null];
     let masterQueue = [];
-    
-    // Mapping of which Physical Button (0-3) points to which Logic Slot (0-3)
     let btnMapping = [0, 1, 2, 3]; 
 
     const playArea = document.getElementById('play-area');
@@ -1244,18 +1237,12 @@ zephyr,a gentle breeze`;
     speedSlider.oninput = (e) => { speed = parseFloat(e.target.value); };
     limitSlider.oninput = (e) => { maxOnScreen = parseInt(e.target.value); };
 
-    // Utility: Shuffle
     function shuffleArray(array) {
         for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [array[i], array[j]] = [array[j], array[i]];
         }
         return array;
-    }
-
-    function scrambleButtons() {
-        shuffleArray(btnMapping);
-        updateAllButtonsUI();
     }
 
     function toggleHint() {
@@ -1273,35 +1260,50 @@ zephyr,a gentle breeze`;
     }
 
     function refreshWindow() {
-        let changed = false;
         for (let i = 0; i < 4; i++) {
             if (windowQueue[i] === null && masterQueue.length > 0) {
-                const next = masterQueue.shift();
-                windowQueue[i] = { ...next, isDropped: false, invader: null };
-                changed = true;
+                windowQueue[i] = { ...masterQueue.shift(), isDropped: false, invader: null };
             }
         }
-        if (changed) scrambleButtons();
-        else updateAllButtonsUI();
+        scrambleAndPopulate();
     }
 
-    function updateAllButtonsUI() {
-        // Iterate through physical buttons and assign content based on scrambled mapping
+    // This is the core Chaos Scramble Logic
+    function scrambleAndPopulate() {
+        shuffleArray(btnMapping);
+        
         btnMapping.forEach((slotIndex, physicalBtnIndex) => {
             const btn = document.getElementById(`btn-${physicalBtnIndex}`);
             const data = windowQueue[slotIndex];
             
-            if (data) {
+            // Logic: If word is currently falling, button MUST be the correct definition.
+            // If lane is empty or queued, randomize this button's content with a decoy.
+            if (data && data.isDropped) {
                 btn.querySelector('.txt').innerText = data.def;
-                btn.classList.remove('hint-active');
-                if (hintEnabled && data.isDropped) {
-                    btn.classList.add('hint-active');
-                }
                 btn.onclick = () => checkShot(slotIndex);
             } else {
-                btn.querySelector('.txt').innerText = "---";
-                btn.classList.remove('hint-active');
-                btn.onclick = null;
+                // Populate with random decoy
+                const decoy = fullList[Math.floor(Math.random() * fullList.length)];
+                btn.querySelector('.txt').innerText = decoy.def;
+                // Decoy click logic
+                btn.onclick = () => applyPenalty(5);
+            }
+            
+            // Visual Hint logic
+            btn.classList.remove('hint-active');
+            if (hintEnabled && data && data.isDropped) {
+                btn.classList.add('hint-active');
+            }
+        });
+    }
+
+    function updateAllButtonsUI() {
+        btnMapping.forEach((slotIndex, physicalBtnIndex) => {
+            const btn = document.getElementById(`btn-${physicalBtnIndex}`);
+            const data = windowQueue[slotIndex];
+            btn.classList.remove('hint-active');
+            if (hintEnabled && data && data.isDropped) {
+                btn.classList.add('hint-active');
             }
         });
     }
@@ -1310,8 +1312,8 @@ zephyr,a gentle breeze`;
         if (!gameActive || isPaused) return;
         if (time - lastSpawnTime < spawnDelay) return;
 
-        const currentFalling = windowQueue.filter(item => item && item.isDropped).length;
-        if (currentFalling >= maxOnScreen) return;
+        const fallingCount = windowQueue.filter(item => item && item.isDropped).length;
+        if (fallingCount >= maxOnScreen) return;
 
         const nextSlot = windowQueue.findIndex(item => item && !item.isDropped);
         if (nextSlot === -1) return;
@@ -1322,11 +1324,11 @@ zephyr,a gentle breeze`;
         el.innerText = target.word;
         playArea.appendChild(el);
 
-        // Positioning: Center 60% of width
+        // Middle Lane Protocol (60% width)
         const usableWidth = playArea.clientWidth * 0.6;
         const startX = playArea.clientWidth * 0.2;
         const laneWidth = usableWidth / 4;
-        const xPos = startX + (nextSlot * laneWidth) + (laneWidth / 2) - 65;
+        const xPos = startX + (nextSlot * laneWidth) + (laneWidth / 2) - 67;
 
         el.style.left = xPos + 'px';
         el.style.top = '-60px';
@@ -1335,7 +1337,9 @@ zephyr,a gentle breeze`;
         target.invader = { el, y: -60, x: xPos };
         
         lastSpawnTime = time;
-        updateAllButtonsUI();
+        
+        // Critical: Scramble when new word appears to put its definition on the board
+        scrambleAndPopulate();
     }
 
     function checkShot(slotIndex) {
@@ -1348,11 +1352,11 @@ zephyr,a gentle breeze`;
         }
 
         const inv = target.invader;
-        ship.style.left = (inv.x + 65) + 'px';
+        ship.style.left = (inv.x + 67) + 'px';
 
         const laser = document.createElement('div');
         laser.className = 'laser';
-        laser.style.left = (inv.x + 65) + 'px';
+        laser.style.left = (inv.x + 67) + 'px';
         laser.style.bottom = '50px';
         playArea.appendChild(laser);
 
@@ -1363,15 +1367,18 @@ zephyr,a gentle breeze`;
             laser.remove();
             if (inv.el) inv.el.remove();
             windowQueue[slotIndex] = null;
-            refreshWindow(); // This triggers scramble
+            
             score += 10;
             scoreEl.innerText = score;
             health = Math.min(100, health + 5);
             healthEl.innerText = health;
+            
+            refreshWindow(); // Scrambles on death
         }, 100);
     }
 
     function applyPenalty(amt) {
+        if (!gameActive) return;
         health = Math.max(0, health - amt);
         healthEl.innerText = health;
         playArea.style.boxShadow = "inset 0 0 50px rgba(239, 68, 68, 0.4)";
@@ -1391,8 +1398,8 @@ zephyr,a gentle breeze`;
                     if (inv.y > playArea.clientHeight - 40) {
                         inv.el.remove();
                         windowQueue[index] = null;
-                        refreshWindow(); // This triggers scramble
                         applyPenalty(20);
+                        refreshWindow(); // Scrambles on reach bottom
                     }
                 }
             });
