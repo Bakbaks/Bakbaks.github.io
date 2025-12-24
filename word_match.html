@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SAT Vocab Matcher</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SAT Mobile Matcher</title>
     <style>
         :root {
             --primary: #3498db;
@@ -14,70 +14,72 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             background-color: var(--bg);
             color: var(--text);
             margin: 0;
+            padding: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
         #setup-screen, #game-screen {
-            width: 90%;
+            width: 95%;
             max-width: 900px;
-            padding: 20px;
+            padding: 15px;
             text-align: center;
+            box-sizing: border-box;
         }
 
         .hidden { display: none !important; }
 
+        /* Group Selection UI */
         .group-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 10px;
-            margin-top: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 8px;
+            margin-top: 15px;
         }
 
         .group-btn {
-            padding: 15px;
+            padding: 12px 5px;
             background: white;
             border: 2px solid var(--primary);
             border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
-            transition: all 0.2s;
+            font-size: 0.9em;
         }
 
-        .group-btn:hover {
-            background: var(--primary);
-            color: white;
-        }
-
+        /* Game Board */
         .stats {
-            margin-bottom: 20px;
-            font-size: 1.1em;
+            margin-bottom: 15px;
+            font-size: 1em;
             display: flex;
             justify-content: space-between;
             background: white;
-            padding: 10px 20px;
-            border-radius: 50px;
+            padding: 10px 15px;
+            border-radius: 25px;
             box-shadow: var(--shadow);
         }
 
         .game-container {
             display: grid;
             grid-template-columns: 1fr 1.5fr;
-            gap: 40px;
-            margin-top: 20px;
+            gap: 15px;
+            margin-top: 10px;
         }
 
-        .column {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
+        @media (max-width: 600px) {
+            .game-container { gap: 10px; }
+            .word-item { padding: 10px !important; font-size: 0.85em; }
+            .def-item { padding: 10px !important; font-size: 0.8em; min-height: 80px !important; }
         }
+
+        .column { display: flex; flex-direction: column; gap: 10px; }
 
         .word-item {
             background: white;
@@ -88,73 +90,55 @@
             font-weight: bold;
             box-shadow: var(--shadow);
             user-select: none;
+            touch-action: none; /* Crucial for mobile */
+            z-index: 10;
         }
 
-        .word-item.dragging { opacity: 0.5; }
+        /* The element currently being moved by touch */
+        .word-item.floating {
+            position: fixed;
+            pointer-events: none;
+            opacity: 0.9;
+            z-index: 1000;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            transform: scale(1.1);
+        }
 
         .def-item {
             background: white;
             padding: 15px;
             border: 2px dashed #bdc3c7;
             border-radius: 8px;
-            min-height: 60px;
+            min-height: 70px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.95em;
-            transition: all 0.3s;
+            font-size: 0.9em;
+            transition: background 0.2s;
         }
 
-        .def-item.drag-over {
-            background: #ebf5fb;
-            border-color: var(--primary);
-            transform: scale(1.02);
-        }
+        .def-item.drag-over { background: #ebf5fb; border-color: var(--primary); }
+        .def-item.matched { background: var(--success) !important; color: white; border-style: solid; border-color: var(--success); }
 
-        .def-item.matched {
-            background: var(--success);
-            color: white;
-            border-style: solid;
-            border-color: var(--success);
-        }
+        .hidden-matched { visibility: hidden; pointer-events: none; }
 
-        .word-item.hidden-matched {
-            visibility: hidden;
-            pointer-events: none;
-        }
-
-        .controls {
-            margin-top: 30px;
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-        }
-
-        button.main-btn {
-            padding: 12px 25px;
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1em;
-        }
-
+        .controls { margin-top: 20px; display: flex; gap: 10px; justify-content: center; }
+        button.main-btn { padding: 12px 20px; background: var(--primary); color: white; border: none; border-radius: 5px; cursor: pointer; }
         button.main-btn:disabled { background: #ccc; }
     </style>
 </head>
 <body>
 
     <div id="setup-screen">
-        <h1>SAT Vocabulary Match</h1>
-        <p>Select a letter group to begin</p>
+        <h2>SAT Vocab Matcher</h2>
+        <p>Pick a group to start:</p>
         <div id="group-list" class="group-container"></div>
     </div>
 
     <div id="game-screen" class="hidden">
         <div class="stats">
-            <span id="group-title">Group A</span>
-            <span>Progress: <span id="progress-text">0/0</span></span>
+            <span id="group-title">...</span>
+            <span><span id="progress-text">0/0</span></span>
         </div>
 
         <div class="game-container">
@@ -164,12 +148,12 @@
 
         <div class="controls">
             <button id="next-btn" class="main-btn" onclick="renderNextSet()" disabled>Next Set</button>
-            <button class="main-btn" style="background:#95a5a6" onclick="location.reload()">Back to Menu</button>
+            <button class="main-btn" style="background:#95a5a6" onclick="location.reload()">Menu</button>
         </div>
     </div>
 
 <script>
-// Paste your full CSV data here inside the backticks
+// (Simplified data snippet for example - replace with your full list)
 const rawData = `abase,"to humiliate, degrade",
 abate,"to reduce,lessen",
 abdicate,to give up a position,
@@ -756,7 +740,7 @@ inquisitor,"one who inquires, especially in a hostile manner",
 insatiable,incapable of being satisfied,
 insidious,"appealing but imperceptibly harmful, seductive",
 insinuate,to suggest indirectly or subtly,
-insipid,"dull, boring",
+insipid,"childish, dull, boring",
 insolent,"rude, arrogant, overbearing",
 instigate,"to urge, goad",
 insular,"separated and narrow-minded, closed off",
@@ -1064,7 +1048,7 @@ sovereign,having absolute authority in a certain realm,
 speculative,not based in fact,
 spurious,false but designed to seem plausible,
 stagnate,"to become or remain inactive, not develop, not flow",
-staid,"sedate, serious, self-restrained",
+staid,"sedate, serious, self-trained",
 stingy,"not generous, not inclined to spend or give",
 stoic,unaffected by passion or feeling,
 stolid,"expressing little sensibility, unemotional",
@@ -1165,7 +1149,6 @@ zephyr,a gentle breeze,`;
 
 let vocabByGroup = {};
 let currentQueue = [];
-let currentGroupName = "";
 let totalInGroup = 0;
 let matchedInGroup = 0;
 let matchesInCurrentSet = 0;
@@ -1174,32 +1157,20 @@ const N = 6;
 function parseData() {
     const lines = rawData.split('\n');
     const groups = {};
-
     lines.forEach(line => {
         if (!line.trim()) return;
-        
         const parts = line.split(',');
         const word = parts[0].trim();
-        
-        // Robust definition parsing
-        // 1. Join parts after index 0 to handle internal commas
-        // 2. Remove leading/trailing whitespace
-        // 3. Remove trailing comma if exists (from the original data's trailing comma)
-        // 4. Remove outermost double quotes only
-        let def = parts.slice(1).join(',').trim();
-        def = def.replace(/,$/, '').trim(); // Remove trailing delimiter comma
-        def = def.replace(/^"|"$/g, '');   // Remove outside double quotes
-        
+        let def = parts.slice(1).join(',').trim().replace(/,$/, '').replace(/^"|"$/g, '');
         const firstLetter = word[0].toUpperCase();
         if (!groups[firstLetter]) groups[firstLetter] = [];
         groups[firstLetter].push({ word, def, id: Math.random().toString(36).substr(2, 9) });
     });
-
     Object.keys(groups).sort().forEach(letter => {
         const list = groups[letter];
         if (list.length > 100) {
-            vocabByGroup[`${letter} (1-100)`] = list.slice(0, 100);
-            vocabByGroup[`${letter} (101+)`] = list.slice(100);
+            vocabByGroup[`${letter}1`] = list.slice(0, 100);
+            vocabByGroup[`${letter}2`] = list.slice(100);
         } else {
             vocabByGroup[letter] = list;
         }
@@ -1208,44 +1179,32 @@ function parseData() {
 
 function initMenu() {
     const container = document.getElementById('group-list');
-    Object.keys(vocabByGroup).forEach(groupName => {
+    Object.keys(vocabByGroup).forEach(name => {
         const btn = document.createElement('button');
         btn.className = 'group-btn';
-        btn.innerText = `${groupName}\n(${vocabByGroup[groupName].length} words)`;
-        btn.onclick = () => startGroup(groupName);
+        btn.innerText = `${name}\n(${vocabByGroup[name].length})`;
+        btn.onclick = () => {
+            currentQueue = [...vocabByGroup[name]].sort(() => Math.random() - 0.5);
+            totalInGroup = currentQueue.length;
+            matchedInGroup = 0;
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('group-title').innerText = name;
+            renderNextSet();
+        };
         container.appendChild(btn);
     });
 }
 
-function startGroup(name) {
-    currentGroupName = name;
-    currentQueue = [...vocabByGroup[name]].sort(() => Math.random() - 0.5);
-    totalInGroup = currentQueue.length;
-    matchedInGroup = 0;
-    
-    document.getElementById('setup-screen').classList.add('hidden');
-    document.getElementById('game-screen').classList.remove('hidden');
-    document.getElementById('group-title').innerText = `Group: ${name}`;
-    
-    renderNextSet();
-}
-
 function renderNextSet() {
-    const wordsCol = document.getElementById('words-col');
-    const defsCol = document.getElementById('defs-col');
-    const nextBtn = document.getElementById('next-btn');
-    
-    wordsCol.innerHTML = "";
-    defsCol.innerHTML = "";
-    nextBtn.disabled = true;
+    const wCol = document.getElementById('words-col');
+    const dCol = document.getElementById('defs-col');
+    wCol.innerHTML = ""; dCol.innerHTML = "";
+    document.getElementById('next-btn').disabled = true;
     matchesInCurrentSet = 0;
 
     const roundItems = currentQueue.splice(0, N);
-    if (roundItems.length === 0) {
-        alert("Group Completed!");
-        location.reload();
-        return;
-    }
+    if (!roundItems.length) { alert("Done!"); location.reload(); return; }
 
     const shuffledDefs = [...roundItems].sort(() => Math.random() - 0.5);
 
@@ -1253,14 +1212,17 @@ function renderNextSet() {
         const div = document.createElement('div');
         div.className = 'word-item';
         div.innerText = item.word;
-        div.draggable = true;
         div.id = `w-${item.id}`;
-        div.addEventListener('dragstart', e => {
-            e.dataTransfer.setData('text/plain', item.id);
-            div.classList.add('dragging');
-        });
-        div.addEventListener('dragend', () => div.classList.remove('dragging'));
-        wordsCol.appendChild(div);
+        div.dataset.id = item.id;
+        
+        // Native Desktop Drag
+        div.draggable = true;
+        div.addEventListener('dragstart', e => e.dataTransfer.setData('text', item.id));
+
+        // Mobile Touch Support
+        addTouchHandlers(div);
+
+        wCol.appendChild(div);
     });
 
     shuffledDefs.forEach(item => {
@@ -1269,27 +1231,68 @@ function renderNextSet() {
         div.innerText = item.def;
         div.dataset.id = item.id;
         
-        div.addEventListener('dragover', e => {
-            e.preventDefault();
-            div.classList.add('drag-over');
-        });
+        // Desktop Drop
+        div.addEventListener('dragover', e => { e.preventDefault(); div.classList.add('drag-over'); });
         div.addEventListener('dragleave', () => div.classList.remove('drag-over'));
-        div.addEventListener('drop', e => handleDrop(e, item.id, div));
-        
-        defsCol.appendChild(div);
-    });
+        div.addEventListener('drop', e => {
+            e.preventDefault();
+            handleMatch(e.dataTransfer.getData('text'), item.id, div);
+        });
 
+        dCol.appendChild(div);
+    });
     updateProgress();
 }
 
-function handleDrop(e, targetId, dropZone) {
-    e.preventDefault();
-    dropZone.classList.remove('drag-over');
-    
-    const draggedId = e.dataTransfer.getData('text/plain');
-    const wordEl = document.getElementById(`w-${draggedId}`);
+// --- TOUCH LOGIC ---
+let activeGhost = null;
+let startX, startY;
 
-    if (draggedId === targetId) {
+function addTouchHandlers(el) {
+    el.addEventListener('touchstart', (e) => {
+        const touch = e.touches[0];
+        startX = touch.clientX;
+        startY = touch.clientY;
+
+        activeGhost = el.cloneNode(true);
+        activeGhost.classList.add('floating');
+        activeGhost.style.width = el.offsetWidth + 'px';
+        activeGhost.style.left = touch.clientX - (el.offsetWidth/2) + 'px';
+        activeGhost.style.top = touch.clientY - (el.offsetHeight/2) + 'px';
+        document.body.appendChild(activeGhost);
+    });
+
+    el.addEventListener('touchmove', (e) => {
+        if (!activeGhost) return;
+        const touch = e.touches[0];
+        activeGhost.style.left = touch.clientX - (activeGhost.offsetWidth/2) + 'px';
+        activeGhost.style.top = touch.clientY - (activeGhost.offsetHeight/2) + 'px';
+
+        // Hover Effect
+        const target = document.elementFromPoint(touch.clientX, touch.clientY);
+        document.querySelectorAll('.def-item').forEach(d => d.classList.remove('drag-over'));
+        if (target && target.classList.contains('def-item')) target.classList.add('drag-over');
+    });
+
+    el.addEventListener('touchend', (e) => {
+        if (!activeGhost) return;
+        const touch = e.changedTouches[0];
+        const target = document.elementFromPoint(touch.clientX, touch.clientY);
+        
+        document.querySelectorAll('.def-item').forEach(d => d.classList.remove('drag-over'));
+        
+        if (target && target.classList.contains('def-item')) {
+            handleMatch(el.dataset.id, target.dataset.id, target);
+        }
+        
+        document.body.removeChild(activeGhost);
+        activeGhost = null;
+    });
+}
+
+function handleMatch(wordId, defId, dropZone) {
+    if (wordId === defId) {
+        const wordEl = document.getElementById(`w-${wordId}`);
         dropZone.classList.add('matched');
         dropZone.innerHTML = `<strong>${wordEl.innerText}:</strong> ${dropZone.innerText}`;
         wordEl.classList.add('hidden-matched');
@@ -1302,15 +1305,13 @@ function handleDrop(e, targetId, dropZone) {
             document.getElementById('next-btn').disabled = false;
         }
     } else {
-        dropZone.style.backgroundColor = "#fab1a0";
-        setTimeout(() => {
-            if(!dropZone.classList.contains('matched')) dropZone.style.backgroundColor = "white";
-        }, 500);
+        dropZone.style.background = "#fab1a0";
+        setTimeout(() => { if(!dropZone.classList.contains('matched')) dropZone.style.background = "white"; }, 400);
     }
 }
 
 function updateProgress() {
-    document.getElementById('progress-text').innerText = `${matchedInGroup} / ${totalInGroup}`;
+    document.getElementById('progress-text').innerText = `${matchedInGroup}/${totalInGroup}`;
 }
 
 parseData();
